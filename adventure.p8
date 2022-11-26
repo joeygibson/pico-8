@@ -1,6 +1,9 @@
 pico-8 cartridge // http://www.pico-8.com
 version 38
 __lua__
+-- adventure game
+-- by joeygibson
+
 -- game loop
 function _init()
 	map_setup()
@@ -15,6 +18,8 @@ function _update()
  	update_map()
 	 move_player()	 
 	 check_win_lose()
+	else
+		if (btn(❎)) extcmd("reset")
 	end
 end
 
@@ -182,6 +187,7 @@ function draw_win_lose()
 	else
 		print("game over!",38,64,7)
 	end
+	print("press ❎ to play again",20,72,5)
 end
 		
 __gfx__
