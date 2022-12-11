@@ -33,7 +33,8 @@ end
 -->8
 -- update and draw
 function _update()
-   player.y+=gravity
+   player_update()
+   player_animate()
 end
 
 function _draw()
@@ -80,15 +81,134 @@ function collide_map(obj,aim,flag)
       return false
    end
 end
+
+-->8
+-- player
+function player_update()
+   -- physics
+   player.dy+=gravity
+   player.dx*=friction
+   
+   if btn(⬅️) then
+   	player.dx-=player.acc
+   	player.running=true
+   	player.flp=true
+   end
+   if btn(➡️) then
+   	player.dx+=player.acc
+   	player.running=true
+   	player.flp=false
+   end
+   
+   -- slide
+   if player.running
+   	and not btn(⬅️)
+   	and not btn(➡️)
+   	and not player.falling
+   	and not player.jumping then
+   		player.running=false
+   		player.sliding=true
+   end
+   
+   -- jump
+   if btnp(❎)
+   	and player.landed then
+   	player.dy-=player.boost
+   	player.landed=false
+   end
+
+			-- check collision up and down
+			if player.dy>0 then
+				player.falling=true
+				player.landed=false
+				player.jumping=false
+				
+				player.dy=limit_speed(player.dy,player.max_dy)
+				
+				if collide_map(player,"down",0) then
+					player.landed=true
+					player.falling=false
+					player.dy=0
+					player.y-=(player.y+player.h)%8
+				end
+			elseif player.dy<0 then
+				player.jumping=true
+				if collide_map(player, "up", 1) then
+					player.dy=0
+				end
+			end
+			
+			-- check collision left and right
+			if player.dx<0 then
+				player.dx=limit_speed(player.dx,player.max_dx)
+				
+				if collide_map(player, "left", 1) then
+					player.dx=0
+				end
+		 elseif player.dy>0 then
+		 	player.dx=limit_speed(player.dx,player.max_dx)
+		 	
+		 	if collide_map(player,"right", 1) then
+		 		player.dx=0
+		 	end
+		 end
+		
+		 -- stop sliding
+		 if player.sliding then
+		 	if abs(player.dx)<.2
+		 	or player.running then
+		 		player.dx=0
+		 		player.sliding=false
+		 	end
+		 end
+		 
+   player.x+=player.dx
+   player.y+=player.dy
+end
+
+function player_animate()
+	if player.jumping then
+		player.sp=7
+	elseif player.falling then
+		player.sp=8
+	elseif player.sliding then
+		player.sp=9
+	elseif player.running then
+		if time()-player.anim>.1 then
+			player.anim=time()
+			player.sp+=1
+			if player.sp>6 then
+				player.sp=3
+			end
+		end
+	else -- player idle
+		if time()-player.anim>.3 then
+			player.anim=time()
+			player.sp+=1
+			if player.sp>2 then
+				player.sp=1
+			end
+		end
+	end
+end
+
+function limit_speed(num,maximum)
+	return mid(-maximum,num,maximum)	
+end
+
+
+
+
+
 __gfx__
-00000000004444400044444000044444000444440004444400044444000444440000000000000000000000000000000000000000000000000000000000000000
-0000000000ccccc000ccccc00ccccccc0c0ccccc0ccccccc0c0ccccc00cccccc0444440000000000000000000000000000000000000000000000000000000000
-007007000cf72f200cf72f20c00ff72fc0cff72fc00ff72fc0cff72f0c0ff72f0ccccc0000000000000000000000000000000000000000000000000000000000
-000770000cfffff00cfffff0000ffffe000ffffe000ffffe000ffffec00ffffecf72f20000000000000000000000000000000000000000000000000000000000
-00077000000cc00000cccc000fccc0000fccc0000fccc0000fccc00000ccc000cfffef0000000000000000000000000000000000000000000000000000000000
-0070070000cccc000f0cc0f0000cc000000cc000000cc000000cc0000f0cc00000ccccf000000000000000000000000000000000000000000000000000000000
-000000000f0cd0f0000cd0000cc0d00000cd00000dd0c00000dc000000dc00000f0ccd0000000000000000000000000000000000000000000000000000000000
-0000000000c00d0000c00d000000d00000cd00000000c00000dc00000dc000000000ccdd00000000000000000000000000000000000000000000000000000000
+00000000004444400044444000044444000444440004444400044444c0044444c004444400000000000000000000000000000000000000000000000000000000
+0000000000ccccc000ccccc00ccccccc0c0ccccc0ccccccc0c0ccccc0cccccccc0cccccc04444400000000000000000000000000000000000000000000000000
+007007000cf72f200cf72f20c00ff72fc0cff72fc00ff72fc0cff72f000ff72f0c0ff72f0ccccc00000000000000000000000000000000000000000000000000
+000770000cfffff00cfffff0000ffffe000ffffe000ffffe000ffffe000ffffe000ffffecf72f200000000000000000000000000000000000000000000000000
+00077000000cc00000cccc000fccc0000fccc0000fccc0000fccc0000000ccc000ccc000cfffef00000000000000000000000000000000000000000000000000
+0070070000cccc000f0cc0f0000cc000000cc000000cc000000cc0000000cc0f0f0cccf000ccccf0000000000000000000000000000000000000000000000000
+000000000f0cd0f0000cd0000cc0d00000cd00000dd0c00000dc000000000cd0000dcc000f0ccd00000000000000000000000000000000000000000000000000
+0000000000c00d0000c00d000000d00000cd00000000c00000dc0000000000cd0000ddc00000ccdd000000000000000000000000000000000000000000000000
 bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb000bbbbbbbbbb000000000000000000000000000000000000000000000000000000000000000000000000000
 3bbb3bbb3bbb3bbb3b333bb33bbbbbb3bbbbb33b00bbb434434bbb00000000000000000000000000000000000000000000000000000000000000000000000000
 33b333433bb33bbb33443bb433bbbb4433bbb3430bbb34444443bbb0000000000000000000000000000000000000000000000000000000000000000000000000
