@@ -7,15 +7,15 @@ function _init()
 
 	-- effects settings
 	trail_width = 1.5
-	trail_colors = (12, 13, 1)
+	trail_colors = {12, 13, 1}
 	trail_amount = 2
 
 	fire_width = 3
-	fire_colors = (8, 9, 10, 5)
+	fire_colors = {8, 9, 10, 5}
 	fire_amount = 3
 
 	explode_size = 5
-	explode_colors = (8, 9, 6, 5)
+	explode_colors = {8, 9, 6, 5}
 	explode_amount = 5
 
 	-- sfx
