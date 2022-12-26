@@ -68,11 +68,11 @@ cls()
  spr(player.sp,player.x,player.y,1,1,player.flp)
 	
  -- test ---------------
- rect(x1r,y1r,x2r,y2r,7)
- print("⬅️= "..collide_l,player.x,player.y-10)
- print("➡️= "..collide_r,player.x,player.y-16)
- print("⬆️= "..collide_u,player.x,player.y-22)
- print("⬇️= "..collide_d,player.x,player.y-28)
+--  rect(x1r,y1r,x2r,y2r,7)
+--  print("⬅️= "..collide_l,player.x,player.y-10)
+--  print("➡️= "..collide_r,player.x,player.y-16)
+--  print("⬆️= "..collide_u,player.x,player.y-22)
+--  print("⬇️= "..collide_d,player.x,player.y-28)
  -- test ---------------
 end
 
