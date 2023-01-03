@@ -33,8 +33,6 @@ function start_game()
 	p_mov=nil
 	p_t=0
 	wind={}
-
-	add_wind(32,64,64,24,{"hello world","this is line 2"})	
 end
 
 -->8
@@ -125,7 +123,7 @@ function draw_spr(_spr,_x,_y,_c,_flip)
 end
 
 function rectfill2(x,y,w,h,c)
-	rectfill(x,y,x+w-1,y+h-1,c)
+	rectfill(x,y,x+max(w-1,0),y+max(h-1,0),c)
 end
 
 -->8
@@ -176,6 +174,9 @@ function trig_bump(tle,dest_x,dest_y)
 		-- door
 		sfx(62)
 		mset(dest_x,dest_y,1)
+	elseif tle==6 then
+		-- stone tablet
+		show_msg("hello world",120)
 	end	
 end
 
@@ -201,7 +202,27 @@ function draw_wind()
 			print(txt,wx,wy,6)
 			wy+=6
 		end
+
+		if w.dur!=nil then
+			w.dur-=1
+			if w.dur<=0 then
+				-- animate closing of window
+				local dif=wh/4
+				wh-=dif
+				w.y+=dif/2
+				w.h=wh
+				if wh<3 then
+					del(wind,w)
+				end
+			end
+		end
 	end
+end
+
+function show_msg(txt,dur)
+	local wid=#txt*4+7
+	local w=add_wind(63-wid/2,50,wid,13,{txt})
+	w.dur=dur
 end
 
 __gfx__
