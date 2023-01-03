@@ -3,9 +3,10 @@ version 39
 __lua__
 function _init()
 	t=0
-	p_ani={240,241,242,243}
 	dir_x={-1,1,0,0,1,1,-1,-1}
 	dir_y={0,0,-1,1,-1,1,1,-1}
+	mob_ani={240,192}
+
 	_upd=update_game
 	_drw=draw_game
 	start_game()
@@ -24,16 +25,9 @@ end
 function start_game()
 	butt_buf=-1
 	mob={}
-	add_mob(0,2,3)
+	p_mob=add_mob(1,1,1)
+	add_mob(2,2,3)
 
-	p_x=1
-	p_y=1
-	p_ox=0
-	p_oy=0
-	p_sox=0
-	p_soy=0
-	p_flip=false
-	p_mov=nil
 	p_t=0
 	wind={}
 	talk_wind=nil
@@ -58,7 +52,7 @@ function update_pturn()
 	do_butt_buff()
 	p_t=min(p_t+0.125,1)
 
-	p_mov()
+	p_mob.mov(p_mob,p_t)
 
 	if p_t==1 then
 		_upd=update_game
@@ -68,19 +62,19 @@ end
 function update_gameover()
 end
 
-function mov_walk()
-	p_ox=p_sox*(1-p_t)
-	p_oy=p_soy*(1-p_t)
+function mov_walk(mob,at)
+	mob.ox=mob.sox*(1-at)
+	mob.oy=mob.soy*(1-at)
 end
 
-function mov_bump()
-	local tme=p_t
-	if p_t>0.5 then
-		tme=1-p_t
+function mov_bump(mob,at)
+	local tme=at
+	if at>0.5 then
+		tme=1-at
 	end
 
-	p_ox=p_sox*tme
-	p_oy=p_soy*tme
+	mob.ox=mob.sox*tme
+	mob.oy=mob.soy*tme
 end
 
 function do_butt_buff()
@@ -112,9 +106,9 @@ end
 function draw_game()
 	cls()
 	map()
-	draw_spr(get_frame(p_ani),p_x*8+p_ox,p_y*8+p_oy,9,p_flip)
+
 	for m in all(mob) do
-		draw_spr(get_frame(m.ani),m.x*8,m.y*8,10,false)
+		draw_spr(get_frame(m.ani),m.x*8+m.ox,m.y*8+m.oy,10,m.flp)
 	end
 end
 
@@ -148,36 +142,74 @@ end
 -->8
 -- gameplay
 function move_player(dx,dy)
-	local dest_x,dest_y=p_x+dx,p_y+dy
+	local dest_x,dest_y=p_mob.x+dx,p_mob.y+dy
 	local tle=mget(dest_x,dest_y) -- get the map tile at that coordinate
 
 	if dx<0 then
-		p_flip=true
+		p_mob.flp=true
 	elseif dx>0 then
-		p_flip=false
+		p_mob.flp=false
 	end
 
-	if fget(tle,0) then
-		-- wall
-		p_sox,p_soy=dx*8,dy*8
-		p_ox,p_oy=0,0
-		p_t=0
-		_upd=update_pturn
-		p_mov=mov_bump
-		if fget(tle,1) then
-			trig_bump(tle,dest_x,dest_y)
-		end
-	else
+	if is_walkable(dest_x,dest_y,"check_mobs") then
 		sfx(63)
-		p_x+=dx
-		p_y+=dy
+		p_mob.x+=dx
+		p_mob.y+=dy
 
-		p_sox,p_soy=-dx*8,-dy*8
-		p_ox,p_oy=p_sox,p_soy
+		p_mob.sox,p_mob.soy=-dx*8,-dy*8
+		p_mob.ox,p_mob.oy=p_mob.sox,p_mob.soy
 		p_t=0
 		_upd=update_pturn
-		p_mov=mov_walk
+		p_mob.mov=mov_walk	
+	else		
+		-- not walkable
+		p_mob.sox,p_mob.soy=dx*8,dy*8
+		p_mob.ox,p_mob.oy=0,0
+		p_t=0
+		_upd=update_pturn
+		p_mob.mov=mov_bump
+
+		local mob=get_mob(dest_x,dest_y)
+		if not mob then
+			if fget(tle,1) then
+				trig_bump(tle,dest_x,dest_y)
+			end
+		else
+			hit_mob(p_mob,mob)
+		end
 	end
+end
+
+function get_mob(x,y)
+	for m in all(mob) do
+		if m.x==x and m.y==y then
+			return m
+		end
+	end
+
+	return false
+end
+
+function is_walkable(x,y,mode)
+	if in_bounds(x,y) then
+		local tle=mget(x,y)
+		if not fget(tle,0) then
+			if mode=="check_mobs" then
+				return not get_mob(x,y)
+			end
+			return true
+		end
+	end
+
+	return false
+end
+
+function in_bounds(x,y)
+	return not (x<0 or y<0 or	x>15 or y>15)
+end
+
+function hit_mob(atkm,defm)
+	
 end
 
 function trig_bump(tle,dest_x,dest_y)
@@ -268,9 +300,22 @@ function add_mob(typ,mx,my)
 	local m={
 		x=mx,
 		y=my,
-		ani={192,193,194,195}
+		ox=0,
+		oy=0,
+		sox=0,
+		soy=0,
+		flp=false,
+		ani={},
+		mov=nil,
 	}
+
+	for i=0,3 do
+		add(m.ani,mob_ani[typ]+i)
+	end
+
 	add(mob,m)
+
+	return m
 end
 
 __gfx__
