@@ -5,8 +5,11 @@ function _init()
 	t=0
 	dir_x={-1,1,0,0,1,1,-1,-1}
 	dir_y={0,0,-1,1,-1,1,1,-1}
-	mob_ani={240,192}
 
+	mob_ani={240,192}
+	mob_atk={1,1}
+	mob_hp={5,2}
+	
 	_upd=update_game
 	_drw=draw_game
 	start_game()
@@ -15,6 +18,7 @@ end
 function _update60()
 	t+=1
 	_upd()
+	do_floats()
 end
 
 function _draw()
@@ -27,9 +31,13 @@ function start_game()
 	mob={}
 	p_mob=add_mob(1,1,1)
 	add_mob(2,2,3)
+	add_mob(2,1,10)
+	add_mob(2,3,11)
+	add_mob(2,7,12)
 
 	p_t=0
 	wind={}
+	float={}
 	talk_wind=nil
 end
 
@@ -60,21 +68,6 @@ function update_pturn()
 end
 
 function update_gameover()
-end
-
-function mov_walk(mob,at)
-	mob.ox=mob.sox*(1-at)
-	mob.oy=mob.soy*(1-at)
-end
-
-function mov_bump(mob,at)
-	local tme=at
-	if at>0.5 then
-		tme=1-at
-	end
-
-	mob.ox=mob.sox*tme
-	mob.oy=mob.soy*tme
 end
 
 function do_butt_buff()
@@ -108,7 +101,17 @@ function draw_game()
 	map()
 
 	for m in all(mob) do
-		draw_spr(get_frame(m.ani),m.x*8+m.ox,m.y*8+m.oy,10,m.flp)
+		local col=10
+		if m.flash>0 then
+			m.flash-=1
+			col=7
+		end
+		
+		draw_spr(get_frame(m.ani),m.x*8+m.ox,m.y*8+m.oy,col,m.flp)
+	end
+
+	for f in all(float) do
+		oprint8(f.txt,f.x,f.y,f.c,0)
 	end
 end
 
@@ -145,29 +148,16 @@ function move_player(dx,dy)
 	local dest_x,dest_y=p_mob.x+dx,p_mob.y+dy
 	local tle=mget(dest_x,dest_y) -- get the map tile at that coordinate
 
-	if dx<0 then
-		p_mob.flp=true
-	elseif dx>0 then
-		p_mob.flp=false
-	end
-
 	if is_walkable(dest_x,dest_y,"check_mobs") then
 		sfx(63)
-		p_mob.x+=dx
-		p_mob.y+=dy
-
-		p_mob.sox,p_mob.soy=-dx*8,-dy*8
-		p_mob.ox,p_mob.oy=p_mob.sox,p_mob.soy
+		mob_walk(p_mob,dx,dy)	
 		p_t=0
 		_upd=update_pturn
-		p_mob.mov=mov_walk	
 	else		
 		-- not walkable
-		p_mob.sox,p_mob.soy=dx*8,dy*8
-		p_mob.ox,p_mob.oy=0,0
+		mob_bump(p_mob,dx,dy)
 		p_t=0
 		_upd=update_pturn
-		p_mob.mov=mov_bump
 
 		local mob=get_mob(dest_x,dest_y)
 		if not mob then
@@ -175,6 +165,7 @@ function move_player(dx,dy)
 				trig_bump(tle,dest_x,dest_y)
 			end
 		else
+			sfx(58)
 			hit_mob(p_mob,mob)
 		end
 	end
@@ -209,7 +200,16 @@ function in_bounds(x,y)
 end
 
 function hit_mob(atkm,defm)
-	
+	local dmg=atkm.atk
+	defm.hp-=dmg 	-- do damage to defender
+	defm.flash=10
+
+	add_float("-"..dmg,defm.x*8,defm.y*8,9)
+
+	if defm.hp<=0 then
+		-- what if defm is player?
+		del(mob,defm)
+	end
 end
 
 function trig_bump(tle,dest_x,dest_y)
@@ -294,6 +294,20 @@ function show_msg(txt)
 	talk_wind.butt=true
 end
 
+function add_float(_txt,_x,_y,_c)
+	add(float,{txt=_txt,x=_x,y=_y,c=_c,ty=_y-10,t=0})
+end
+
+function do_floats()
+	for f in all(float) do
+		f.y+=(f.ty-f.y)/10
+		f.t+=1
+		if f.t>70 then
+			del(float,f)
+		end
+	end
+end
+
 -->8
 -- mobs
 function add_mob(typ,mx,my)
@@ -306,7 +320,11 @@ function add_mob(typ,mx,my)
 		soy=0,
 		flp=false,
 		ani={},
+		flash=0,
 		mov=nil,
+		hp=mob_hp[typ],
+		hp_max=mob_hp[typ],
+		atk=mob_atk[typ]
 	}
 
 	for i=0,3 do
@@ -317,6 +335,47 @@ function add_mob(typ,mx,my)
 
 	return m
 end
+
+function mob_walk(mb,dx,dy)
+	mb.x+=dx
+	mb.y+=dy
+
+	mob_flip(mb,dx)
+	mb.sox,mb.soy=-dx*8,-dy*8
+	mb.ox,mb.oy=mb.sox,mb.soy
+	mb.mov=mov_walk	
+end
+
+function mob_bump(mb,dx,dy)
+	mob_flip(mob,dx)
+	mb.sox,mb.soy=dx*8,dy*8
+	mb.ox,mb.oy=0,0
+	mb.mov=mov_bump
+end
+
+function mob_flip(mb,dx)
+	if dx<0 then
+		mb.flp=true
+	elseif dx>0 then
+		mb.flp=false
+	end
+end
+
+function mov_walk(mb,at)
+	mb.ox=mb.sox*(1-at)
+	mb.oy=mb.soy*(1-at)
+end
+
+function mov_bump(mb,at)
+	local tme=at
+	if at>0.5 then
+		tme=1-at
+	end
+
+	mb.ox=mb.sox*tme
+	mb.oy=mb.soy*tme
+end
+
 
 __gfx__
 000000000000000060666060000000000000000000000000aaaaaaa000aaa00000aaa00000000000000000000000000000aaa000a0aaa0a0a000000055555550
@@ -525,8 +584,8 @@ __sfx__
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00010000211102114015140271300f6300f6101c610196001761016600156100f6000c61009600076000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000100001b61006540065401963018630116100e6100c610096100861000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00010000205302b5302e5302e5300000000000000002751027510285102a5102a5000000000000275102951029510295000000000000000001f5101f5101f5102151023510245000000000000000000000000000
 000100001b0201b020130201302028220242201d21019210172101421013210112100f2100e2100c2100921008210082100821008210082100821008210082100821008210082100721000200002000020000200
 000100001d0301d03016030160303201032010350102b0102b0102b01029010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
