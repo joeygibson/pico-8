@@ -82,7 +82,7 @@ function update_aiturn()
 	do_butt_buff()
 	p_t=min(p_t+0.125,1)
 	for m in all(mob) do
-		if m!=p_mob then
+		if m!=p_mob and m.mov then
 			m.mov(m,p_t)
 		end
 	end
@@ -405,25 +405,36 @@ function mov_bump(mb,at)
 	mb.ox=mb.sox*tme
 	mb.oy=mb.soy*tme
 end
--- TODO: video 12, 10:18 remaining
+
 function do_ai()
 	for m in all(mob) do
 		if m!=p_mob then
-			local bdst,bx,by=999,0,0
-			for i=1,4 do
-				local dx,dy=dir_x[i],dir_y[i]
-				local tx,ty=m.x+dx,m.y+dy
-				if is_walkable(tx,ty,"check_mobs") then
-					local dst=dist(tx,ty,p_mob.x,p_mob.y)
-					if dst<bdst then
-						bdst,bx,by=dst,dx,dy
+			m.mov=nil
+
+			if dist(m.x,m.y,p_mob.x,p_mob.y)==1 then -- adjacent
+				-- attack player
+				dx,dy=p_mob.x-m.x,p_mob.y-m.y
+				mob_bump(m,dx,dy)
+				hit_mob(m,p_mob)
+				sfx(57)
+			else
+				--move toward player
+				local bdst,bx,by=999,0,0
+				for i=1,4 do
+					local dx,dy=dir_x[i],dir_y[i]
+					local tx,ty=m.x+dx,m.y+dy
+					if is_walkable(tx,ty,"check_mobs") then
+						local dst=dist(tx,ty,p_mob.x,p_mob.y)
+						if dst<bdst then
+							bdst,bx,by=dst,dx,dy
+						end
 					end
 				end
-			end
 
-			mob_walk(m,bx,by)
-			_upd=update_aiturn
-			p_t=0
+				mob_walk(m,bx,by)
+				_upd=update_aiturn
+				p_t=0
+			end
 		end
 	end
 end
