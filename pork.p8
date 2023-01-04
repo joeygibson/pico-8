@@ -30,10 +30,15 @@ function start_game()
 	butt_buf=-1
 	mob={}
 	p_mob=add_mob(1,1,1)
-	add_mob(2,2,3)
-	add_mob(2,1,10)
-	add_mob(2,3,11)
-	add_mob(2,7,12)
+
+	for x=0,15 do
+		for y=0,15 do
+			if mget(x,y)==192 then
+				add_mob(2,x,y)
+				mset(x,y,1)
+			end
+		end
+	end
 
 	p_t=0
 	wind={}
