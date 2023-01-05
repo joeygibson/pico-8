@@ -284,6 +284,7 @@ function get_mob(x,y)
 end
 
 function is_walkable(x,y,mode)
+	-- "sight" is a mode
 	if in_bounds(x,y) then
 		local tle=mget(x,y)
 		if not fget(tle,0) then
@@ -350,6 +351,43 @@ function trig_bump(tle,dest_x,dest_y)
 			show_msg({"this is the second", "message"})
 		end
 	end	
+end
+
+function los(x1,y1,x2,y2)
+	local frst,sx,sy,dx,dy=true
+	if dist(x1,y1,x2,y2)==1 then return true end
+	if x1<x2 then
+		sx=1
+		dx=x2-x1
+	else
+		sx=-1
+		dx=x1-x2
+	end
+	
+	if y1<y2 then
+		sy=1
+		dy=y2-y1
+	else
+		sy=-1
+		dy=y1-y2
+	end
+
+	local err,e2=dx-dy,nil
+	
+	while not (x1==x2 and y1==y2) do
+		if not frst and is_walkable(x1,y1,"sight")==false then return false end
+		frst=false
+		e2=err+err
+		if e2>-dy then
+			err=err-dy
+			x1=x1+sx
+		end
+		if e2<dx then
+			err=err+dx
+			y1=y1+sy
+		end
+	end
+	return true
 end
 
 -->8
@@ -503,6 +541,7 @@ end
 function do_ai()
 	for m in all(mob) do
 		if m!=p_mob then
+			debug[1]=los(m.x,m.y,p_mob.x,p_mob.y)
 			m.mov=nil
 
 			if dist(m.x,m.y,p_mob.x,p_mob.y)==1 then -- adjacent
@@ -525,7 +564,7 @@ function do_ai()
 					end
 				end
 
-				mob_walk(m,bx,by)
+				-- mob_walk(m,bx,by)
 				_upd=update_aiturn
 				p_t=0
 			end
