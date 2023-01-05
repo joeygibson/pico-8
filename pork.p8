@@ -26,6 +26,7 @@ end
 function _draw()
 	_drw()
 	draw_wind()
+	do_hp_win()
 	check_fade()
 	cursor(4,4)
 	color(8)
@@ -53,7 +54,7 @@ function start_game()
 	wind={}
 	float={}
 	talk_wind=nil
-
+	hp_wind=add_wind(5,5,28,13,{})
 	_upd=update_game
 	_drw=draw_game
 end
@@ -316,6 +317,7 @@ end
 
 function check_end()
 	if p_mob.hp<=0 then
+		wind={}
 		_upd=update_gover
 		_drw=draw_gover
 		fadeout(0.02)
@@ -419,6 +421,15 @@ function do_floats()
 			del(float,f)
 		end
 	end
+end
+
+function do_hp_win()
+	hp_wind.txt[1]="♥"..p_mob.hp.."/"..p_mob.hp_max
+	local hpy=5
+	if p_mob.y<8 then
+		hpy=110
+	end
+	hp_wind.y+=(hpy-hp_wind.y)/5
 end
 
 -->8
