@@ -3,6 +3,7 @@ version 39
 __lua__
 function _init()
 	t=0
+	dpal={0,1,1,2,1,13,6,4,4,9,3,13,1,13,14}
 	dir_x={-1,1,0,0,1,1,-1,-1}
 	dir_y={0,0,-1,1,-1,1,1,-1}
 
@@ -25,6 +26,7 @@ end
 function _draw()
 	_drw()
 	draw_wind()
+	check_fade()
 	cursor(4,4)
 	color(8)
 	for txt in all(debug) do
@@ -33,6 +35,7 @@ function _draw()
 end
 
 function start_game()
+	fadeperc=1
 	butt_buf=-1
 	mob={}
 	dmob={}
@@ -100,6 +103,7 @@ end
 
 function update_gover()
 	if btnp(❎) then
+		fadeout()
 		start_game()
 	end
 end
@@ -202,6 +206,43 @@ function dist(fx,fy,tx,ty)
 	return sqrt(dx*dx+dy*dy)
 end
 
+function do_fade()
+	local p,kmax,col,k=flr(mid(0,fadeperc,1)*100)
+	for j=1,15 do
+		col=j
+		kmax=flr((p+(j*1.46))/22)
+		for k=1,kmax do
+			col=dpal[col]
+		end
+		pal(j,col,1)
+	end
+end
+
+function check_fade()
+	if fadeperc>0 then
+		fadeperc=max(fadeperc-0.04,0)
+		do_fade()
+	end
+end
+
+function wait(_wait)
+	repeat
+		_wait-=1
+		flip()
+	until _wait<0
+end
+
+function fadeout(spd,_wait)
+	if (spd==nil) spd=0.04
+	if (_wait==nil) _wait=0
+	repeat
+		fadeperc=min(fadeperc+spd,1)
+		do_fade()
+		flip()
+	until fadeperc==1
+	wait(_wait)
+end
+
 -->8
 -- gameplay
 function move_player(dx,dy)
@@ -277,6 +318,7 @@ function check_end()
 	if p_mob.hp<=0 then
 		_upd=update_gover
 		_drw=draw_gover
+		fadeout(0.02)
 		return false
 	end
 
