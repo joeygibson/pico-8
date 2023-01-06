@@ -551,7 +551,7 @@ function ai_wait(m)
 	if los(m.x,m.y,p_mob.x,p_mob.y) then
 		-- aggro the mob
 		m.task=ai_attac
-
+		add_float("!",m.x*8+2,m.y*8,10)
 	end
 end
 
