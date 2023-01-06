@@ -564,7 +564,7 @@ function do_ai()
 					end
 				end
 
-				-- mob_walk(m,bx,by)
+				mob_walk(m,bx,by)
 				_upd=update_aiturn
 				p_t=0
 			end
