@@ -537,13 +537,23 @@ function mov_bump(mb,at)
 end
 
 function do_ai()
+	local moving=false
+
 	for m in all(mob) do
 		if m!=p_mob then
-			debug[1]=los(m.x,m.y,p_mob.x,p_mob.y)			
+			-- debug[1]=los(m.x,m.y,p_mob.x,p_mob.y)			
 
 			m.mov=nil
-			m.task(m)			
+			-- moving=m.task(m)			
+			if m.task(m) then
+				moving=true
+			end
 		end
+	end
+	-- debug[2]=moving
+	if moving then
+		_upd=update_aiturn
+		p_t=0
 	end
 end
 
@@ -553,7 +563,10 @@ function ai_wait(m)
 		m.task=ai_attac
 		m.tx,m.ty=p_mob.x,p_mob.y
 		add_float("!",m.x*8+2,m.y*8,10)
+		return true
 	end
+
+	return false
 end
 
 function ai_attac(m)
@@ -563,9 +576,7 @@ function ai_attac(m)
 		mob_bump(m,dx,dy)
 		hit_mob(m,p_mob)
 		sfx(57)
-		
-		_upd=update_aiturn
-		p_t=0
+		return true
 	else
 		--move toward player
 		if los(m.x,m.y,p_mob.x,p_mob.y) then
@@ -590,10 +601,11 @@ function ai_attac(m)
 			end
 
 			mob_walk(m,bx,by)
-			_upd=update_aiturn
-			p_t=0
+			return true
 		end
 	end
+
+	return false
 end
 
 
