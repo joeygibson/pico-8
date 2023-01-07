@@ -21,12 +21,12 @@ function _update60()
 	t+=1
 	_upd()
 	do_floats()
+	do_hp_win()
 end
 
 function _draw()
 	_drw()
 	draw_wind()
-	do_hp_win()
 	check_fade()
 	cursor(4,4)
 	color(8)
