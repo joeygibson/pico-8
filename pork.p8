@@ -596,16 +596,10 @@ function do_ai()
 
 	for m in all(mob) do
 		if m!=p_mob then
-			-- debug[1]=los(m.x,m.y,p_mob.x,p_mob.y)			
-
 			m.mov=nil
-			-- moving=m.task(m)			
-			if m.task(m) then
-				moving=true
-			end
+			moving=m.task(m) or moving
 		end
 	end
-	-- debug[2]=moving
 	if moving then
 		_upd=update_aiturn
 		p_t=0
