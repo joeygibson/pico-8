@@ -55,9 +55,11 @@ function start_game()
 	wind={}
 	float={}
 	talk_wind=nil
+	fog=blankmap(1)
 	hp_wind=add_wind(5,5,28,13,{})
 	_upd=update_game
 	_drw=draw_game
+	unfog()
 end
 
 -->8
@@ -159,6 +161,14 @@ function draw_game()
 
 	draw_mob(p_mob)
 
+	for x=0,15 do
+		for y=0,15 do
+			if fog[x][y]==1 then
+				rectfill2(x*8,y*8,8,8,0)
+			end
+		end
+	end
+
 	for f in all(float) do
 		oprint8(f.txt,f.x,f.y,f.c,0)
 	end
@@ -234,6 +244,20 @@ function wait(_wait)
 	until _wait<0
 end
 
+function blankmap(_dflt)
+	local ret={}
+	if (not _dflt) _dflt=0
+
+	for x=0,15 do
+		ret[x]={}
+		for y=0,15 do
+			ret[x][y]=_dflt
+		end
+	end
+
+	return ret
+end
+
 function fadeout(spd,_wait)
 	if (spd==nil) spd=0.04
 	if (_wait==nil) _wait=0
@@ -272,6 +296,8 @@ function move_player(dx,dy)
 			hit_mob(p_mob,mob)
 		end
 	end
+
+	unfog(p_mob.x,p_mob.y)
 end
 
 function get_mob(x,y)
@@ -390,6 +416,16 @@ function los(x1,y1,x2,y2)
 		end
 	end
 	return true
+end
+
+function unfog()
+	for x=0,15 do
+		for y=0,15 do
+			if los(p_mob.x,p_mob.y,x,y) then
+				fog[x][y]=0
+			end
+		end
+	end
 end
 
 -->8
