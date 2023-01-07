@@ -551,6 +551,7 @@ function ai_wait(m)
 	if los(m.x,m.y,p_mob.x,p_mob.y) then
 		-- aggro the mob
 		m.task=ai_attac
+		m.tx,m.ty=p_mob.x,p_mob.y
 		add_float("!",m.x*8+2,m.y*8,10)
 	end
 end
@@ -567,21 +568,31 @@ function ai_attac(m)
 		p_t=0
 	else
 		--move toward player
-		local bdst,bx,by=999,0,0
-		for i=1,4 do
-			local dx,dy=dir_x[i],dir_y[i]
-			local tx,ty=m.x+dx,m.y+dy
-			if is_walkable(tx,ty,"check_mobs") then
-				local dst=dist(tx,ty,p_mob.x,p_mob.y)
-				if dst<bdst then
-					bdst,bx,by=dst,dx,dy
-				end
-			end
+		if los(m.x,m.y,p_mob.x,p_mob.y) then
+			m.tx,m.ty=p_mob.x,p_mob.y
 		end
 
-		mob_walk(m,bx,by)
-		_upd=update_aiturn
-		p_t=0
+		if m.x==m.tx and m.y==m.ty then
+			-- de-aggro
+			m.task=ai_wait
+			add_float("?",m.x*8+2,m.y*8,10)
+		else
+			local bdst,bx,by=999,0,0
+			for i=1,4 do
+				local dx,dy=dir_x[i],dir_y[i]
+				local tx,ty=m.x+dx,m.y+dy
+				if is_walkable(tx,ty,"check_mobs") then
+					local dst=dist(tx,ty,m.tx,m.ty)
+					if dst<bdst then
+						bdst,bx,by=dst,dx,dy
+					end
+				end
+			end
+
+			mob_walk(m,bx,by)
+			_upd=update_aiturn
+			p_t=0
+		end
 	end
 end
 
