@@ -153,14 +153,10 @@ function draw_game()
 		end
 	end
 
-	for m in all(mob) do
-		if m!=p_mob then
-			draw_mob(m)
-		end
+	for i=#mob,1,-1 do
+		draw_mob(mob[i])
 	end
-
-	draw_mob(p_mob)
-
+	
 	for x=0,15 do
 		for y=0,15 do
 			if fog[x][y]==1 then
@@ -222,7 +218,7 @@ function do_fade()
 	local p,kmax,col,k=flr(mid(0,fadeperc,1)*100)
 	for j=1,15 do
 		col=j
-		kmax=flr((p+(j*1.46))/22)
+		kmax=flr((p+j*1.46)/22)
 		for k=1,kmax do
 			col=dpal[col]
 		end
@@ -286,14 +282,14 @@ function move_player(dx,dy)
 		p_t=0
 		_upd=update_pturn
 
-		local mob=get_mob(dest_x,dest_y)
-		if not mob then
+		local mb=get_mob(dest_x,dest_y)
+		if mb then
+			sfx(58)
+			hit_mob(p_mob,mb)
+		else
 			if fget(tle,1) then
 				trig_bump(tle,dest_x,dest_y)
 			end
-		else
-			sfx(58)
-			hit_mob(p_mob,mob)
 		end
 	end
 
@@ -389,33 +385,28 @@ function los(x1,y1,x2,y2)
 	local frst,sx,sy,dx,dy=true
 	if dist(x1,y1,x2,y2)==1 then return true end
 	if x1<x2 then
-		sx=1
-		dx=x2-x1
+		sx,dx=1,x2-x1
 	else
-		sx=-1
-		dx=x1-x2
+		sx,dx=-1,x1-x2
 	end
 	
 	if y1<y2 then
-		sy=1
-		dy=y2-y1
+		sy,dy=1,y2-y1		
 	else
-		sy=-1
-		dy=y1-y2
+		sy,dy=-1,y1-y2
 	end
 
-	local err,e2=dx-dy,nil
+	local err,e2=dx-dy
 	
 	while not (x1==x2 and y1==y2) do
 		if not frst and is_walkable(x1,y1,"sight")==false then return false end
-		frst=false
-		e2=err+err
+		frst,e2=false,err+err
 		if e2>-dy then
-			err=err-dy
+			err-=dy
 			x1=x1+sx
 		end
 		if e2<dx then
-			err=err+dx
+			err+=dx
 			y1=y1+sy
 		end
 	end
@@ -459,8 +450,6 @@ function draw_wind()
 		local wx,wy,ww,wh=w.x,w.y,w.w,w.h
 		rectfill2(wx,wy,ww,wh,0)	-- black rectangle
 		rect(wx+1,wy+1,wx+ww-2,wy+wh-2,6)
-		-- rectfill2(wx+1,wy+1,ww-2,wh-2,6)	-- outline
-		-- rectfill2(wx+2,wy+2,ww-4,wh-4,0)	-- content
 		wx+=4
 		wy+=4
 		clip(wx,wy,ww-8,wh-8)
@@ -571,16 +560,15 @@ function mob_bump(mb,dx,dy)
 end
 
 function mob_flip(mb,dx)
-	if dx<0 then
-		mb.flp=true
-	elseif dx>0 then
-		mb.flp=false
-	end
+	-- if dx is 0, keep existing mb.flp
+	-- otherwise, adjust for left or right
+	mb.flp=dx==0 and mb.flp or dx<0
 end
 
 function mov_walk(mb,at)
-	mb.ox=mb.sox*(1-at)
-	mb.oy=mb.soy*(1-at)
+	local tme=1-at
+	mb.ox=mb.sox*tme
+	mb.oy=mb.soy*tme
 end
 
 function mov_bump(mb,at)
