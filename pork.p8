@@ -81,7 +81,7 @@ function update_pturn()
 	do_butt_buff()
 	p_t=min(p_t+0.125,1)
 
-	p_mob.mov(p_mob,p_t)
+	p_mob:mov()
 	if p_t==1 then
 		_upd=update_game
 		if check_end() then
@@ -95,7 +95,7 @@ function update_aiturn()
 	p_t=min(p_t+0.125,1)
 	for m in all(mob) do
 		if m!=p_mob and m.mov then
-			m.mov(m,p_t)
+			m:mov()
 		end
 	end
 
@@ -156,7 +156,7 @@ function draw_game()
 	for i=#mob,1,-1 do
 		draw_mob(mob[i])
 	end
-	
+
 	for x=0,15 do
 		for y=0,15 do
 			if fog[x][y]==1 then
@@ -417,7 +417,7 @@ function unfog()
 	local px,py=p_mob.x,p_mob.y
 	for x=0,15 do
 		for y=0,15 do
-			if dist(px,py,x,y)<=p_mob.los and los(px,py,x,y) then
+			if fog[x][y]==1 and dist(px,py,x,y)<=p_mob.los and los(px,py,x,y) then
 				unfog_tile(x,y)
 			end
 		end
@@ -565,20 +565,17 @@ function mob_flip(mb,dx)
 	mb.flp=dx==0 and mb.flp or dx<0
 end
 
-function mov_walk(mb,at)
-	local tme=1-at
-	mb.ox=mb.sox*tme
-	mb.oy=mb.soy*tme
+function mov_walk(self)
+	local tme=1-p_t
+	self.ox=self.sox*tme
+	self.oy=self.soy*tme
 end
 
-function mov_bump(mb,at)
-	local tme=at
-	if at>0.5 then
-		tme=1-at
-	end
+function mov_bump(self)
+	local tme=p_t>0.5 and 1-p_t or p_t
 
-	mb.ox=mb.sox*tme
-	mb.oy=mb.soy*tme
+	self.ox=self.sox*tme
+	self.oy=self.soy*tme
 end
 
 function do_ai()
@@ -586,16 +583,13 @@ function do_ai()
 
 	for m in all(mob) do
 		if m!=p_mob then
-			-- debug[1]=los(m.x,m.y,p_mob.x,p_mob.y)			
-
 			m.mov=nil
-			-- moving=m.task(m)			
 			if m.task(m) then
 				moving=true
 			end
 		end
 	end
-	-- debug[2]=moving
+
 	if moving then
 		_upd=update_aiturn
 		p_t=0
