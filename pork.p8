@@ -264,6 +264,10 @@ function blankmap(_dflt)
 	return ret
 end
 
+function get_rnd(arr)
+	return arr[1+flr(rnd(#arr))]
+end
+
 function fadeout(spd,_wait)
 	if (spd==nil) spd=0.04
 	if (_wait==nil) _wait=0
@@ -382,11 +386,11 @@ function trig_bump(tle,dest_x,dest_y)
 	elseif tle==6 then
 		-- stone tablet
 		if dest_x==2 and dest_y==5 then
-			show_msg({"welcome to porklike","","climb the tower","to obtain the", "golden kielbasa"})
+			show_talk({"welcome to porklike","","climb the tower","to obtain the", "golden kielbasa"})
 		elseif dest_x==13 and dest_y==6 then
-			show_msg({"you're almost there!"})
+			show_talk({"you're almost there!"})
 		elseif dest_x==13 and dest_y==12 then
-			show_msg({"this is the second", "message"})
+			show_talk({"this is the second", "message"})
 		end
 	end	
 end
@@ -413,11 +417,11 @@ function los(x1,y1,x2,y2)
 		frst,e2=false,err+err
 		if e2>-dy then
 			err-=dy
-			x1=x1+sx
+			x1+=sx
 		end
 		if e2<dx then
 			err+=dx
-			y1=y1+sy
+			y1+=sy
 		end
 	end
 	return true
@@ -526,7 +530,7 @@ function show_msg(txt,dur)
 	w.dur=dur
 end
 
-function show_msg(txt)	
+function show_talk(txt)	
 	talk_wind=add_wind(16,50,94,#txt*6+7,txt)
 	talk_wind.butt=true
 end
@@ -670,7 +674,7 @@ function ai_attac(m)
 			m.task=ai_wait
 			add_float("?",m.x*8+2,m.y*8,10)
 		else
-			local bdst,bx,by=999,0,0
+			local bdst,cand=999,{}
 			calc_dist(m.tx,m.ty)
 			for i=1,4 do
 				local dx,dy=dir_x[i],dir_y[i]
@@ -678,13 +682,20 @@ function ai_attac(m)
 				if is_walkable(tx,ty,"check_mobs") then
 					local dst=dist_map[tx][ty]
 					if dst<bdst then
-						bdst,bx,by=dst,dx,dy
+						cand={}
+						bdst=dst
+					end
+					if dst==bdst then
+						add(cand,{x=dx,y=dy})
 					end
 				end
 			end
 
-			mob_walk(m,bx,by)
-			return true
+			if #cand>0 then
+				local c=get_rnd(cand)
+				mob_walk(m,c.x,c.y)
+				return true
+			end
 		end
 	end
 
