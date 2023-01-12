@@ -55,7 +55,7 @@ function start_game()
 	wind={}
 	float={}
 	talk_wind=nil
-	fog=blankmap(1)
+	fog=blankmap(0) -- TODO: set back to 1
 	hp_wind=add_wind(5,5,28,13,{})
 	_upd=update_game
 	_drw=draw_game
@@ -86,6 +86,7 @@ function update_pturn()
 		_upd=update_game
 		if check_end() then
 			do_ai()
+			calc_dist(p_mob.x,p_mob.y)
 		end	
 	end
 end
@@ -168,6 +169,15 @@ function draw_game()
 	for f in all(float) do
 		oprint8(f.txt,f.x,f.y,f.c,0)
 	end
+
+	-- overlay dist_map onto map
+	-- for x=0,15 do
+	-- 	for y=0,15 do
+	-- 		if dist_map[x][y]>=0 then
+	-- 			print(dist_map[x][y], x*8,y*8,8)
+	-- 		end
+	-- 	end
+	-- end
 end
 
 function draw_mob(m)
@@ -437,6 +447,35 @@ function unfog_tile(x,y)
 	end
 end
 
+function calc_dist(tx,ty)
+	local cand,step={},0
+	dist_map=blankmap(-1)
+
+	add(cand,{x=tx,y=ty})
+	dist_map[tx][ty]=step
+	repeat
+		step+=1
+		cand_new={}
+
+		for c in all(cand) do
+			for d=1,4 do
+				local dx=c.x+dir_x[d]
+				local dy=c.y+dir_y[d]
+
+				if in_bounds(dx,dy) and dist_map[dx][dy]==-1 then
+					dist_map[dx][dy]=step
+
+					if is_walkable(dx,dy) then
+						add(cand_new,{x=dx,y=dy})
+					end
+				end
+			end
+		end
+
+		cand=cand_new
+	until #cand==0
+end
+
 -->8
 -- ui
 function add_wind(_x,_y,_w,_h,_txt)
@@ -632,11 +671,12 @@ function ai_attac(m)
 			add_float("?",m.x*8+2,m.y*8,10)
 		else
 			local bdst,bx,by=999,0,0
+			calc_dist(m.tx,m.ty)
 			for i=1,4 do
 				local dx,dy=dir_x[i],dir_y[i]
 				local tx,ty=m.x+dx,m.y+dy
 				if is_walkable(tx,ty,"check_mobs") then
-					local dst=dist(tx,ty,m.tx,m.ty)
+					local dst=dist_map[tx][ty]
 					if dst<bdst then
 						bdst,bx,by=dst,dx,dy
 					end
