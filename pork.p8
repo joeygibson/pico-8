@@ -11,8 +11,8 @@ function _init()
 	mob_atk={1,1}
 	mob_hp={5,2}
 	mob_los={4,4}
-	itm_name={"broad sword","leather armor","red bean paste","ninja star"}
-	itm_type={"wep","arm","fud","thr"}
+	itm_name={"broad sword","leather armor","red bean paste","ninja star","rusty sword"}
+	itm_type={"wep","arm","fud","thr","wep"}
 	_upd=update_game
 	_drw=draw_game
 	debug={}
@@ -62,6 +62,7 @@ function start_game()
 	take_item(2)
 	take_item(3)
 	take_item(4)
+	take_item(5)
 	wind={}
 	float={}
 	talk_wind=nil
@@ -102,7 +103,7 @@ function update_inv()
 		if cur_wind==inv_wind and inv_wind.cur!=3 then
 			show_use()
 		elseif cur_wind==use_wind then
-			-- use window confirm
+			trig_use()
 		end
 	end
 end
@@ -651,7 +652,7 @@ function show_use()
 	local itm=inv_wind.cur<3 and eqp[inv_wind.cur] or inv[inv_wind.cur-3]
 	if not itm then return end
 	local typ,txt=itm_type[itm],{}
-	if typ=="wep" or typ=="arm" then
+	if (typ=="wep" or typ=="arm") and inv_wind.cur>3 then
 		add(txt,"equip")
 	end
 	if typ=="fud" then
@@ -665,6 +666,38 @@ function show_use()
 	use_wind=add_wind(84,inv_wind.cur*6+11,36,7+#txt*6,txt)
 	use_wind.cur=1
 	cur_wind=use_wind
+end
+
+function trig_use()
+	local verb,i,after=use_wind.txt[use_wind.cur],inv_wind.cur,"back"
+	local itm=i<3 and eqp[i] or inv[i-3]
+	if verb=="trash" then
+		if i<3 then
+			eqp[i]=nil
+		else
+			inv[i-3]=nil
+		end
+	elseif verb=="equip" then
+		local slot=2
+		if itm_type[itm]=="wep" then
+			slot=1
+		end
+		inv[i-3]=eqp[slot]
+		eqp[slot]=itm		
+	elseif verb=="eat" then
+	elseif verb=="throw" then
+	end
+
+	if after=="back" then
+		use_wind.dur=0
+		show_inv()
+		inv_wind.cur=i
+	elseif after=="game" then
+		use_wind.dur=0
+		inv_wind.dur=0
+		stat_wind.dur=0
+		_upd=update_game
+	end
 end
 
 -->8
