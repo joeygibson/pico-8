@@ -7,6 +7,8 @@ function _init()
 	dir_x={-1,1,0,0,1,1,-1,-1}
 	dir_y={0,0,-1,1,-1,1,1,-1}
 
+	thr_dir,thr_dx,thr_dy=2,0,0
+
 	mob_ani={240,192}
 	mob_atk={1,1}
 	mob_hp={5,2}
@@ -111,7 +113,21 @@ function update_inv()
 end
 
 function update_throw()
-	
+	debug[1]="update_throw"
+	local b=get_butt()
+	if b>=0 and b<=3 then
+		thr_dir=b
+	end
+
+	thr_dx=dir_x[thr_dir+1]
+	thr_dy=dir_y[thr_dir+1]
+	if b==4 then
+		-- cancel
+		_upd=update_game
+	elseif b==5 then
+		-- actually throw
+		throw()
+	end
 end
 
 function move_mnu(wnd)
@@ -207,6 +223,10 @@ function draw_game()
 
 	for i=#mob,1,-1 do
 		draw_mob(mob[i])
+	end
+
+	if _upd==update_throw then
+		line(p_mob.x*8+4,p_mob.y*8+4,p_mob.x*8+thr_dx*16+4,p_mob.y*8+thr_dy*16+4,7)
 	end
 
 	for x=0,15 do
@@ -566,6 +586,10 @@ function eat(itm,mb)
 	end	
 end
 
+function throw()
+	_upd=update_game
+end
+
 -->8
 -- ui
 function add_wind(_x,_y,_w,_h,_txt)
@@ -760,7 +784,7 @@ function trig_use()
 		use_wind.dur=0
 		inv_wind.dur=0
 		stat_wind.dur=0
-		upd=update_throw
+		_upd=update_throw
 	end
 end
 
