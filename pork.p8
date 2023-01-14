@@ -96,10 +96,11 @@ end
 
 function move_mnu(wnd)
 	if btnp(2) then
-		wnd.cur=max(1,wnd.cur-1)
+		wnd.cur-=1
 	elseif btnp(3) then
-		wnd.cur=min(#wnd.txt,wnd.cur+1)
+		wnd.cur+=1
 	end
+	wnd.cur=(wnd.cur-1)%#wnd.txt+1
 end
 
 function update_pturn()
@@ -524,7 +525,7 @@ function draw_wind()
 		wy+=4
 		clip(wx,wy,ww-8,wh-8)
 
-		if w.cur_mode then
+		if w.cur then
 			wx+=6
 		end
 
@@ -597,21 +598,16 @@ function do_hp_win()
 end
 
 function show_inv()
-	local txt,col={},{}
+	local txt,col,itm,eqt={},{}
 	_upd=update_inv
 
 	for i=1,2 do
-		local itm,eqt=eqp[i]
+		itm=eqp[i]
 		if itm then
 			eqt=itm_name[itm]
-			add(txt,itm_name[itm])		
 			add(col,6)
 		else
-			if i==1 then
-				eqt="[weapon]"
-			else
-				eqt="[armor]"
-			end
+			eqt=i==1 and "[weapon]" or "[armor]"
 			add(col,5)
 		end
 		add(txt,eqt)
@@ -619,18 +615,18 @@ function show_inv()
 	add(txt,"……………………")
 	add(col,6)
 	for i=1,6 do
-		local itm=inv[i]
-		if itm then			
-			add(txt,itm_name[itm])		
+		itm=inv[i]
+		if itm then
+			eqt=itm_name[itm]
 			add(col,6)
 		else
-			add(txt,"...")
+			eqt="..."
 			add(col,5)
 		end
+		add(txt,eqt)
 	end
 	
 	inv_wind=add_wind(5,17,84,62,txt)
-	inv_wind.cur_mode=true
 	inv_wind.cur=3
 	inv_wind.col=col
 
