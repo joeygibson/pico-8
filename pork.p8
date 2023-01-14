@@ -110,6 +110,10 @@ function update_inv()
 	end
 end
 
+function update_throw()
+	
+end
+
 function move_mnu(wnd)
 	if btnp(2) then
 		wnd.cur-=1
@@ -123,7 +127,10 @@ function update_pturn()
 	do_butt_buff()
 	p_t=min(p_t+0.125,1)
 
-	p_mob:mov()
+	if p_mob.mov then
+		p_mob:mov()
+	end
+
 	if p_t==1 then
 		_upd=update_game
 		if check_end() then
@@ -391,7 +398,6 @@ function hit_mob(atkm,defm)
 	local dmg=atkm.atk
 	local def=defm.def_min+flr(rnd(defm.def_max-defm.def_min)+1)
 	dmg-=min(def,dmg)
-	debug[1]=def
 	defm.hp-=dmg 	-- do damage to defender
 	defm.flash=10
 
@@ -402,6 +408,14 @@ function hit_mob(atkm,defm)
 		del(mob,defm)
 		defm.dur=30
 	end
+end
+
+function heal_mob(mb,hp)
+	hp=min(mb.hp_max-mb.hp,hp)
+	mb.hp+=hp
+	mb.flash=10
+
+	add_float("+"..hp,mb.x*8,mb.y*8,7)
 end
 
 function check_end()
@@ -542,6 +556,14 @@ function update_stats()
 	p_mob.atk=atk
 	p_mob.def_min=dmin
 	p_mob.def_max=dmax
+end
+
+function eat(itm,mb)
+	local effect=itm_stat1[itm]
+
+	if effect==1 then
+		heal_mob(mb, 1)
+	end	
 end
 
 -->8
@@ -707,7 +729,12 @@ function trig_use()
 		inv[i-3]=eqp[slot]
 		eqp[slot]=itm
 	elseif verb=="eat" then
+		eat(itm,p_mob)
+		inv[i-3]=nil
+		p_mob.mov=nil
+		after="turn"
 	elseif verb=="throw" then
+		after="throw"
 	end
 
 	update_stats()
@@ -718,11 +745,22 @@ function trig_use()
 		del(wind,stat_wind)
 		show_inv()
 		inv_wind.cur=i
+	elseif after=="turn" then
+		use_wind.dur=0
+		inv_wind.dur=0
+		stat_wind.dur=0
+		p_t=0
+		_upd=update_pturn
 	elseif after=="game" then
 		use_wind.dur=0
 		inv_wind.dur=0
 		stat_wind.dur=0
 		_upd=update_game
+	elseif after=="throw" then
+		use_wind.dur=0
+		inv_wind.dur=0
+		stat_wind.dur=0
+		upd=update_throw
 	end
 end
 
