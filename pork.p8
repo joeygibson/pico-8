@@ -13,6 +13,8 @@ function _init()
 	mob_los={4,4}
 	itm_name={"broad sword","leather armor","red bean paste","ninja star","rusty sword"}
 	itm_type={"wep","arm","fud","thr","wep"}
+	itm_stat1={2,0,1,1,1}
+	itm_stat2={0,2,0,0,0}
 	_upd=update_game
 	_drw=draw_game
 	debug={}
@@ -387,6 +389,9 @@ end
 
 function hit_mob(atkm,defm)
 	local dmg=atkm.atk
+	local def=defm.def_min+flr(rnd(defm.def_max-defm.def_min)+1)
+	dmg-=min(def,dmg)
+	debug[1]=def
 	defm.hp-=dmg 	-- do damage to defender
 	defm.flash=10
 
@@ -522,6 +527,23 @@ function calc_dist(tx,ty)
 	until #cand==0
 end
 
+function update_stats()
+	local atk,dmin,dmax=1,0,0
+
+	if eqp[1] then
+		atk+=itm_stat1[eqp[1]]
+	end
+
+	if eqp[2] then
+		dmin+=itm_stat1[eqp[2]]
+		dmax+=itm_stat2[eqp[2]]
+	end
+
+	p_mob.atk=atk
+	p_mob.def_min=dmin
+	p_mob.def_max=dmax
+end
+
 -->8
 -- ui
 function add_wind(_x,_y,_w,_h,_txt)
@@ -644,7 +666,7 @@ function show_inv()
 	inv_wind.cur=3
 	inv_wind.col=col
 
-	stat_wind=add_wind(5,5,84,13,{"atk: 1 def: 1"})
+	stat_wind=add_wind(5,5,84,13,{"atk: "..p_mob.atk.." def: "..p_mob.def_min.."-"..p_mob.def_max})
 	cur_wind=inv_wind
 end
 
@@ -683,13 +705,17 @@ function trig_use()
 			slot=1
 		end
 		inv[i-3]=eqp[slot]
-		eqp[slot]=itm		
+		eqp[slot]=itm
 	elseif verb=="eat" then
 	elseif verb=="throw" then
 	end
 
+	update_stats()
+
 	if after=="back" then
 		use_wind.dur=0
+		del(wind,inv_wind)
+		del(wind,stat_wind)
 		show_inv()
 		inv_wind.cur=i
 	elseif after=="game" then
@@ -714,6 +740,8 @@ function add_mob(typ,mx,my)
 		hp=mob_hp[typ],
 		hp_max=mob_hp[typ],
 		atk=mob_atk[typ],
+		def_min=0,
+		def_max=0,
 		los=mob_los[typ],
 		task=ai_wait
 	}
