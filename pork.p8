@@ -11,7 +11,8 @@ function _init()
 	mob_atk={1,1}
 	mob_hp={5,2}
 	mob_los={4,4}
-	itm_name={"broad sword","leather armor","red potion"}
+	itm_name={"broad sword","leather armor","red bean paste","ninja star"}
+	itm_type={"wep","arm","fud","thr"}
 	_upd=update_game
 	_drw=draw_game
 	debug={}
@@ -60,6 +61,7 @@ function start_game()
 	take_item(1)
 	take_item(2)
 	take_item(3)
+	take_item(4)
 	wind={}
 	float={}
 	talk_wind=nil
@@ -86,11 +88,22 @@ function update_game()
 end
 
 function update_inv()
-	move_mnu(inv_wind)
+	move_mnu(cur_wind)
 	if btnp(4) then
-		_upd=update_game
-		inv_wind.dur=0
-		stat_wind.dur=0
+		if cur_wind==inv_wind then
+			_upd=update_game
+			inv_wind.dur=0
+			stat_wind.dur=0
+		elseif cur_wind==use_wind then
+			use_wind.dur=0
+			cur_wind=inv_wind
+		end
+	elseif btnp(5) then
+		if cur_wind==inv_wind and inv_wind.cur!=3 then
+			show_use()
+		elseif cur_wind==use_wind then
+			-- use window confirm
+		end
 	end
 end
 
@@ -631,6 +644,27 @@ function show_inv()
 	inv_wind.col=col
 
 	stat_wind=add_wind(5,5,84,13,{"atk: 1 def: 1"})
+	cur_wind=inv_wind
+end
+
+function show_use()
+	local itm=inv_wind.cur<3 and eqp[inv_wind.cur] or inv[inv_wind.cur-3]
+	if not itm then return end
+	local typ,txt=itm_type[itm],{}
+	if typ=="wep" or typ=="arm" then
+		add(txt,"equip")
+	end
+	if typ=="fud" then
+		add(txt,"eat")
+	end
+	if typ=="thr" or typ=="fud" then
+		add(txt,"throw")
+	end
+	add(txt,"trash")
+
+	use_wind=add_wind(84,inv_wind.cur*6+11,36,7+#txt*6,txt)
+	use_wind.cur=1
+	cur_wind=use_wind
 end
 
 -->8
