@@ -7,7 +7,7 @@ function _init()
 	dir_x={-1,1,0,0,1,1,-1,-1}
 	dir_y={0,0,-1,1,-1,1,1,-1}
 
-	thr_dir,thr_dx,thr_dy=2,0,0
+	thr_dir,thr_dx,thr_dy=2,0,-1
 
 	mob_ani={240,192}
 	mob_atk={1,1}
@@ -113,7 +113,6 @@ function update_inv()
 end
 
 function update_throw()
-	debug[1]="update_throw"
 	local b=get_butt()
 	if b>=0 and b<=3 then
 		thr_dir=b
@@ -225,8 +224,25 @@ function draw_game()
 		draw_mob(mob[i])
 	end
 
+	-- throwing UI
 	if _upd==update_throw then
-		line(p_mob.x*8+4,p_mob.y*8+4,p_mob.x*8+thr_dx*16+4,p_mob.y*8+thr_dy*16+4,7)
+		local tx,ty=throw_tile()
+		local lx1=p_mob.x*8+3+thr_dx*4
+		local ly1=p_mob.y*8+3+thr_dy*4
+		local lx2=mid(0,tx*8+3,127)
+		local ly2=mid(0,ty*8+3,127)
+
+		line(lx1+thr_dy,ly1+thr_dx,lx2+thr_dy,ly2+thr_dx,0)
+		line(lx1-thr_dy,ly1-thr_dx,lx2-thr_dy,ly2-thr_dx,0)
+
+		if flr(t/7%2)==0 then
+			fillp(0b1010010110100101)
+		else
+			fillp(0b0101101001011010)
+		end
+		line(lx1,ly1,lx2,ly2,7)
+		fillp()
+		oprint8("+",lx2-1,ly2-2,7,0)
 	end
 
 	for x=0,15 do
@@ -588,6 +604,15 @@ end
 
 function throw()
 	_upd=update_game
+end
+
+function throw_tile()
+	local tx,ty=p_mob.x,p_mob.y
+	repeat
+		tx+=thr_dx
+		ty+=thr_dy
+	until not is_walkable(tx,ty,"check_mobs")
+	return tx,ty
 end
 
 -->8
