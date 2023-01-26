@@ -48,34 +48,23 @@ function start_game()
 	mob={}
 	dmob={}
 	p_mob=add_mob(1,1,1)
-
-	for x=0,15 do
-		for y=0,15 do
-			if mget(x,y)==192 then
-				add_mob(2,x,y)
-				mset(x,y,1)
-			end
-		end
-	end
-
 	p_t=0
 
 	inv,eqp={},{}
 	-- inv[1-6] == inventory
 	-- eqp[1] == weapon, eqp[2] == armor
 	-- take_item(1)
-	-- take_item(2)
-	-- take_item(3)
-	-- take_item(4)
-	-- take_item(5)
+	
 	wind={}
 	float={}
 	talk_wind=nil
-	fog=blankmap(1) -- TODO: set back to 1
+	fog=blankmap(0) -- 1 == fog, 0 == clear
 	hp_wind=add_wind(5,5,28,13,{})
 	_upd=update_game
 	_drw=draw_game
 	unfog()
+
+	map_gen()
 end
 
 -->8
@@ -202,6 +191,8 @@ function do_butt(butt)
 		move_player(dir_x[butt+1], dir_y[butt+1])
 	elseif butt==5 then
 		show_inv()
+	elseif butt==4 then
+		map_gen()
 	end
 	-- menu button
 end
@@ -996,6 +987,95 @@ function free_inv_slot()
 		end
 	end
 	return 0
+end
+
+-->8
+-- gen
+
+function map_gen()
+	for x=0,15 do
+		for y=0,15 do
+			mset(x,y,2)
+		end
+	end
+
+	gen_rooms()
+end
+
+---------------------
+-- rooms
+---------------------
+function gen_rooms()
+	local f_max,r_max=5,9	-- failure_max, room_max
+	local mw,mh=6,6
+	repeat
+		local r = rnd_room(mw,mh)
+
+		if place_room(r) then
+			r_max-=1
+		else
+			f_max-=1
+			if r.w>r.h then
+				mw=max(mw-1,3)
+			else
+				mh=max(mh-1,3)
+			end
+		end
+	until f_max<=0 or r_max<=0
+
+	debug[1]=f_max
+	debug[2]=r_max
+end
+
+function rnd_room(mw,mh)
+	local _w=3+flr(rnd(mw-2))
+	mh=max(35/_w,3)
+	local _h=3+flr(rnd(mh-2))
+
+	return {
+		x=0,
+		y=0,
+		w=_w,
+		h=_h,
+	}
+end
+
+function place_room(r)
+	local cand={}
+
+	for _x=0,16-r.w do
+		for _y=0,16-r.h do
+			if does_room_fit(r,_x,_y) then
+				add(cand,{x=_x,y=_y})
+			end
+		end
+	end
+
+	if #cand==0 then
+		return false
+	else
+		c=get_rnd(cand)
+		r.x,r.y=c.x,c.y
+		for _x=0,r.w-1 do
+			for _y=0,r.h-1 do
+				mset(_x+r.x,_y+r.y,1)
+			end
+		end
+	end
+
+	return true
+end
+
+function does_room_fit(r,x,y)
+	for _x=-1,r.w do
+		for _y=-1,r.h do
+			if is_walkable(_x+x,_y+y) then
+				return false
+			end
+		end
+	end
+
+	return true
 end
 
 __gfx__
