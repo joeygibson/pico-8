@@ -80,6 +80,8 @@ function update_game()
 		do_butt(butt_buf)
 		butt_buf=-1
 	end
+
+	debug[1]=get_sig(p_mob.x,p_mob.y)
 end
 
 function update_inv()
@@ -1022,9 +1024,6 @@ function gen_rooms()
 			end
 		end
 	until f_max<=0 or r_max<=0
-
-	debug[1]=f_max
-	debug[2]=r_max
 end
 
 function rnd_room(mw,mh)
@@ -1077,6 +1076,22 @@ function does_room_fit(r,x,y)
 
 	return true
 end
+
+---------------------
+-- maze
+---------------------
+function get_sig(x,y)
+	local sig=0
+	for i=1,8 do
+		local dx,dy=x+dir_x[i],y+dir_y[i]
+		if not is_walkable(dx,dy) then
+			sig=bor(sig,shl(1,8-i))
+		end
+	end
+
+	return sig
+end
+
 
 __gfx__
 000000000000000060666060000000000000000000000000aaaaaaaa00aaa00000aaa00000000000000000000000000000aaa000a0aaa0a0a000000055555550
