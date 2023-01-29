@@ -1013,7 +1013,7 @@ end
 -- rooms
 ---------------------
 function gen_rooms()
-	local f_max,r_max=5,9	-- failure_max, room_max
+	local f_max,r_max=5,4	-- failure_max, room_max
 	local mw,mh=6,6
 	repeat
 		local r = rnd_room(mw,mh)
@@ -1086,21 +1086,54 @@ end
 -- maze
 ---------------------
 function maze_worm()
-	for x=0,15 do
-		for y=0,15 do
-			if not is_walkable(x,y) then
-				if can_carve(x,y) then
-					mset(x,y,3)
-				else
-					mset(x,y,2)
-				end
+	repeat
+		local cand={}
+		for x=0,15 do
+			for y=0,15 do
+				if not is_walkable(x,y) and get_sig(x,y)==255 then
+					add(cand,{x=x,y=y})
+				end 
 			end
 		end
-	end
+
+		if #cand>0 then
+			local c=get_rnd(cand)
+
+			dig_worm(c.x,c.y)
+		end
+	until #cand<=1
+end
+
+function dig_worm(x,y)
+	local dr,step=1+flr(rnd(4)),0
+
+	repeat
+		mset(x,y,1)
+
+		if not can_carve(x+dir_x[dr],y+dir_y[dr]) or (rnd()<0.5 and step>2) then
+			step=0
+			local cand={}
+
+			for i=1,4 do
+				if can_carve(x+dir_x[i],y+dir_y[i]) then
+					add(cand,i)
+				end
+			end
+
+			if #cand==0 then
+				dr=8
+			else
+				dr=get_rnd(cand)
+			end
+		end
+		x+=dir_x[dr]
+		y+=dir_y[dr]
+		step+=1
+	until dr==8
 end
 
 function can_carve(x,y)
-	if in_bounds(x,y) then
+	if in_bounds(x,y) and not is_walkable(x,y) then
 		local sig=get_sig(x,y)
 
 		for i=1,#crv_sig do
