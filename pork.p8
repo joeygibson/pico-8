@@ -1209,7 +1209,7 @@ end
 function carve_doors()
 	local x1,y1,x2,y2,found,flg1,flg2=1,1,1,1
 	repeat
-	local drs={}
+		local drs={}
 		for x=0,15 do
 			for y=0,15 do
 				if not is_walkable(x,y) then
