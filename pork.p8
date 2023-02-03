@@ -251,15 +251,6 @@ function draw_game()
 		end
 	end
 
-	-- TODO: remove
-	for x=0,15 do
-		for y=0,15 do
-			if flags[x][y]!=0 then
-				pset(x*8+3,y*8+5,flags[x][y])
-			end
-		end
-	end
-
 	for f in all(float) do
 		oprint8(f.txt,f.x,f.y,f.c,0)
 	end
@@ -1016,6 +1007,7 @@ function map_gen()
 	maze_worm()
 	place_flags()
 	carve_doors()
+	carve_scuts()
 end
 
 ---------------------
@@ -1237,6 +1229,40 @@ function carve_doors()
 			grow_flag(d.x,d.y,d.f1)
 		end
 	until #drs==0
+end
+
+function carve_scuts()
+	local x1,y1,x2,y2,cut,found=1,1,1,1,0
+	repeat
+		local drs={}
+		for x=0,15 do
+			for y=0,15 do
+				if not is_walkable(x,y) then
+					local sig=get_sig(x,y)
+					found=false
+
+					if b_comp(sig,0b11000000,0b00001111) then
+						x1,y1,x2,y2,found=x,y-1,x,y+1,true
+					elseif b_comp(sig,0b00110000,0b00001111) then
+						x1,y1,x2,y2,found=x-1,y,x+1,y,true
+					end
+
+					if found then
+						calc_dist(x1,y1)
+						if dist_map[x2][y2]>20 then
+							add(drs,{x=x,y=y})
+						end
+					end
+				end
+			end
+		end
+
+		if #drs!=0 then
+			local d=get_rnd(drs)
+			mset(d.x,d.y,1)
+			cut+=1
+		end
+	until #drs==0 or cut>=3
 end
 
 __gfx__
