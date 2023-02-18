@@ -1008,6 +1008,7 @@ function map_gen()
 	place_flags()
 	carve_doors()
 	carve_scuts()
+	fill_ends()
 end
 
 ---------------------
@@ -1111,12 +1112,12 @@ function dig_worm(x,y)
 	repeat
 		mset(x,y,1)
 
-		if not can_carve(x+dir_x[dr],y+dir_y[dr]) or (rnd()<0.5 and step>2) then
+		if not can_carve(x+dir_x[dr],y+dir_y[dr],false) or (rnd()<0.5 and step>2) then
 			step=0
 			local cand={}
 
 			for i=1,4 do
-				if can_carve(x+dir_x[i],y+dir_y[i]) then
+				if can_carve(x+dir_x[i],y+dir_y[i],false) then
 					add(cand,i)
 				end
 			end
@@ -1133,8 +1134,8 @@ function dig_worm(x,y)
 	until dr==8
 end
 
-function can_carve(x,y)
-	if in_bounds(x,y) and not is_walkable(x,y) then
+function can_carve(x,y,walk)
+	if in_bounds(x,y) and is_walkable(x,y)==walk then
 		local sig=get_sig(x,y)
 
 		for i=1,#crv_sig do
@@ -1183,13 +1184,14 @@ end
 
 function grow_flag(x,y,flg)
 	local cand,cand_new={{x=x,y=y}}
+	flags[x][y]=flg
 	repeat
 		cand_new={}
 		for c in all(cand) do
 			for d=1,4 do
-				flags[c.x][c.y]=flg
 				local dx,dy=c.x+dir_x[d],c.y+dir_y[d]
 				if is_walkable(dx,dy) and flags[dx][dy]!=flg then
+					flags[dx][dy]=flg
 					add(cand_new,{x=dx,y=dy})
 				end
 			end
@@ -1199,9 +1201,9 @@ function grow_flag(x,y,flg)
 end
 
 function carve_doors()
-	local x1,y1,x2,y2,found,flg1,flg2=1,1,1,1
+	local x1,y1,x2,y2,found,flg1,flg2,drs=1,1,1,1
 	repeat
-		local drs={}
+		drs={}
 		for x=0,15 do
 			for y=0,15 do
 				if not is_walkable(x,y) then
@@ -1222,7 +1224,7 @@ function carve_doors()
 				end
 			end
 		end
-
+		
 		if #drs!=0 then
 			local d=get_rnd(drs)
 			mset(d.x,d.y,1)
@@ -1232,9 +1234,9 @@ function carve_doors()
 end
 
 function carve_scuts()
-	local x1,y1,x2,y2,cut,found=1,1,1,1,0
+	local x1,y1,x2,y2,cut,found,drs=1,1,1,1,0
 	repeat
-		local drs={}
+		drs={}
 		for x=0,15 do
 			for y=0,15 do
 				if not is_walkable(x,y) then
@@ -1265,6 +1267,24 @@ function carve_scuts()
 	until #drs==0 or cut>=3
 end
 
+function fill_ends()
+	local cand
+	repeat 
+		cand={}
+		for x=0,15 do
+			for y=0,15 do
+				if can_carve(x,y,true) then
+					add(cand,{x=x,y=y})
+				end
+			end
+		end
+
+		for c in all(cand) do
+			mset(c.x,c.y,2)
+		end
+	until #cand==0
+end
+
 __gfx__
 000000000000000060666060d0ddd0d0f0fff0f000000000aaaaaaaa00aaa00000aaa00000000000000000000000000000aaa000a0aaa0a0a000000055555550
 000000000000000000000000000000000000000000000000aaaaaaaa0a000a000a000a00066666600aaaaaa066666660a0aaa0a000000000a0aa000000000000
@@ -1279,7 +1299,7 @@ __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
