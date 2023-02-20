@@ -390,8 +390,6 @@ function move_player(dx,dy)
 				trig_bump(tle,dest_x,dest_y)
 			else
 				skip_ai=true
-				mset(dest_x,dest_y,1)
-				maze_worm()
 			end
 		end
 	end
@@ -1003,12 +1001,17 @@ function map_gen()
 		end
 	end
 
+	rooms={}
+	room_map=blankmap(0)
+	doors={}
 	gen_rooms()
 	maze_worm()
 	place_flags()
 	carve_doors()
 	carve_scuts()
 	fill_ends()
+	start_end()
+	install_doors()
 end
 
 ---------------------
@@ -1062,9 +1065,13 @@ function place_room(r)
 	else
 		c=get_rnd(cand)
 		r.x,r.y=c.x,c.y
+		add(rooms,r)
+
 		for _x=0,r.w-1 do
 			for _y=0,r.h-1 do
 				mset(_x+r.x,_y+r.y,1)
+
+				room_map[_x+r.x][_y+r.y]=#rooms
 			end
 		end
 	end
@@ -1227,6 +1234,7 @@ function carve_doors()
 		
 		if #drs!=0 then
 			local d=get_rnd(drs)
+			add(doors,d)
 			mset(d.x,d.y,1)
 			grow_flag(d.x,d.y,d.f1)
 		end
@@ -1261,6 +1269,7 @@ function carve_scuts()
 
 		if #drs!=0 then
 			local d=get_rnd(drs)
+			add(doors,d)
 			mset(d.x,d.y,1)
 			cut+=1
 		end
@@ -1283,6 +1292,66 @@ function fill_ends()
 			mset(c.x,c.y,2)
 		end
 	until #cand==0
+end
+
+function is_door(x,y)
+	for i=1,4 do
+		if in_bounds(x+dir_x[i],y+dir_y[i]) and room_map[x+dir_x[i]][y+dir_y[i]]!=0 then
+			return true
+		end
+	end
+
+	return false
+end
+
+function install_doors()
+	for d in all(doors) do
+		if is_walkable(d.x,d.y) and is_door(d.x,d.y) then
+			mset(d.x,d.y,13)
+		end
+	end
+end
+
+---------------------
+-- decoration
+---------------------
+function start_end()
+	local high,low,px,py,ex,ey=0,9999
+	repeat 
+		px,py=flr(rnd(16)),flr(rnd(16))
+	until is_walkable(px,py)
+
+	calc_dist(px,py)
+
+	for x=0,15 do
+		for y=0,15 do
+			local tmp=dist_map[x][y]
+			if tmp>high and can_carve(x,y,false) then
+				px,py=x,y
+				high=tmp
+			end
+		end
+	end
+
+	calc_dist(px,py)
+	high=0
+	for x=0,15 do
+		for y=0,15 do
+			local tmp=dist_map[x][y]
+			if tmp>high and can_carve(x,y,false) then
+				ex,ey,high=x,y,tmp
+			end
+			if tmp>=0 and tmp<low and can_carve(x,y,false) then
+				px,py,low=x,y,tmp
+			end
+		end
+	end
+
+	mset(px,py,15)
+	p_mob.x=px
+	p_mob.y=py
+
+	mset(ex,ey,14)
 end
 
 __gfx__
