@@ -64,9 +64,9 @@ function start_game()
 
 	_upd=update_game
 	_drw=draw_game
-	unfog()
 
-	map_gen()
+	gen_floor(0)
+	unfog()
 end
 
 -->8
@@ -138,14 +138,15 @@ function update_pturn()
 
 	if p_t==1 then
 		_upd=update_game
-		if check_end() then
-			if skip_ai then
-				skip_ai=false
-			else
-				do_ai()
-			end
-			calc_dist(p_mob.x,p_mob.y)
-		end	
+
+		local tle=mget(p_mob.x, p_mob.y)
+		if trig_step() then return end
+
+		if check_end() and not skip_ai then
+			do_ai()
+		end
+
+		skip_ai=false
 	end
 end
 
@@ -501,6 +502,18 @@ function trig_bump(tle,dest_x,dest_y)
 	end
 end
 
+function trig_step()
+	local tle=mget(p_mob.x, p_mob.y)
+	if tle==14 then
+		fadeout()
+		gen_floor(floor+1)
+		floor_msg()
+		return true
+	end
+
+	return false
+end
+
 function los(x1,y1,x2,y2)
 	local frst,sx,sy,dx,dy=true
 	if dist(x1,y1,x2,y2)==1 then return true end
@@ -558,7 +571,7 @@ function unfog_tile(x,y)
 end
 
 function calc_dist(tx,ty)
-	local cand,step={},0
+	local cand,step,cand_new={},0
 	dist_map=blankmap(-1)
 
 	add(cand,{x=tx,y=ty})
@@ -823,6 +836,10 @@ function trig_use()
 	end
 end
 
+function floor_msg()
+	show_msg("floor "..floor,120)
+end
+
 -->8
 -- mobs and items
 function add_mob(typ,mx,my)
@@ -953,14 +970,14 @@ function ai_attac(m)
 						bdst=dst
 					end
 					if dst==bdst then
-						add(cand,{x=dx,y=dy})
+						add(cand,i)
 					end
 				end
 			end
 
 			if #cand>0 then
 				local c=get_rnd(cand)
-				mob_walk(m,c.x,c.y)
+				mob_walk(m,dir_x[c],dir_y[c])
 				return true
 			end
 		end
@@ -993,6 +1010,11 @@ end
 
 -->8
 -- gen
+function gen_floor(f)
+	floor=f
+
+	map_gen()
+end
 
 function map_gen()
 	for x=0,15 do
@@ -1009,8 +1031,8 @@ function map_gen()
 	place_flags()
 	carve_doors()
 	carve_scuts()
-	fill_ends()
 	start_end()
+	fill_ends()
 	install_doors()
 end
 
@@ -1038,7 +1060,7 @@ end
 
 function rnd_room(mw,mh)
 	local _w=3+flr(rnd(mw-2))
-	mh=max(35/_w,3)
+	mh=mid(35/_w,3,mh)
 	local _h=3+flr(rnd(mh-2))
 
 	return {
@@ -1277,12 +1299,13 @@ function carve_scuts()
 end
 
 function fill_ends()
-	local cand
+	local cand,tle
 	repeat 
 		cand={}
 		for x=0,15 do
 			for y=0,15 do
-				if can_carve(x,y,true) then
+				tle=mget(x,y)
+				if can_carve(x,y,true) and tle!=14 and tle!=15 then
 					add(cand,{x=x,y=y})
 				end
 			end
@@ -1341,6 +1364,13 @@ function start_end()
 			if tmp>high and can_carve(x,y,false) then
 				ex,ey,high=x,y,tmp
 			end
+		end
+	end
+	mset(ex,ey,14)
+
+	for x=0,15 do
+		for y=0,15 do
+			local tmp=dist_map[x][y]
 			if tmp>=0 and tmp<low and can_carve(x,y,false) then
 				px,py,low=x,y,tmp
 			end
@@ -1351,7 +1381,7 @@ function start_end()
 	p_mob.x=px
 	p_mob.y=py
 
-	mset(ex,ey,14)
+	
 end
 
 __gfx__
