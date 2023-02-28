@@ -10,6 +10,7 @@ function _init()
  g=0.025 -- gravity
  make_player()
  make_ground()
+ make_stars()
 end
 
 function _update()
@@ -95,12 +96,19 @@ function stay_on_screen()
  end
 end
 
+function make_stars()
+  -- create a table of random stars
+  stars={}
+  for i=1,50 do
+    star={x=rndb(0,127),y=rndb(0,127),c=rndb(5,7)}
+    add(stars, star)
+  end
+end
+
 function draw_stars()
- srand(1)
- for i=1,50 do
-  pset(rndb(0,127),rndb(0,127),rndb(5,7))
- end
- srand(time())
+  for star in all(stars) do
+    pset(star.x,star.y,star.c)
+  end
 end
 
 function make_ground()
