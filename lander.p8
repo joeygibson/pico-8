@@ -13,7 +13,7 @@ function _init()
 end
 
 function _update()
- if (not game_over) then
+ if not game_over then
   move_player()
   check_land()
  else
@@ -27,8 +27,8 @@ function _draw()
  draw_ground()
  draw_player()
  
- if (game_over) then
-  if (win) then
+ if game_over then
+  if win then
    print("you win!",48,48,11)
   else
    print("too bad!",48,48,8)
@@ -51,9 +51,9 @@ end
 
 function draw_player()
  spr(p.sprite,p.x,p.y)
- if (game_over and win) then
+ if game_over and win then
   spr(4,p.x,p.y-8) -- flag
- elseif (game_over) then
+ elseif game_over then
   spr(5,p.x,p.y)   -- explosion
  end
 end
@@ -81,15 +81,15 @@ function thrust()
 end
 
 function stay_on_screen()
- if (p.x<0) then     -- left side
+ if p.x<0 then     -- left side
   p.x=0
   p.dx=0
  end
- if (p.x>119) then   -- right side
+ if p.x>119 then   -- right side
   p.x=119
   p.dx=0
  end
- if (p.y<0) then     -- top side
+ if p.y<0 then     -- top side
   p.y=0
   p.dy=0
  end
@@ -150,13 +150,13 @@ function check_land()
  on_pad=b_y>=pad.y-1
  slow=p.dy<1
 
- if (over_pad and on_pad and slow) then
+ if over_pad and on_pad and slow then
   end_game(true)
- elseif (over_pad and on_pad) then
+ elseif over_pad and on_pad then
   end_game(false)
  else
   for i=l_x,r_x do
-   if (gnd[i]<=b_y) then
+   if gnd[i]<=b_y then
     end_game(false)
    end
   end
@@ -167,7 +167,7 @@ function end_game(won)
  game_over=true
  win=won
 
- if (win) then
+ if win then
   sfx(1)
  else
   sfx(2)
