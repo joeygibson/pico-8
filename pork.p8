@@ -1133,6 +1133,22 @@ function maze_worm()
 			dig_worm(c.x,c.y)
 		end
 	until #cand<=1
+
+	repeat
+		local cand={}
+		for x=0,15 do
+			for y=0,15 do
+				if can_carve(x,y,false) and not next_to_room(x,y) then
+					add(cand,{x=x,y=y})
+				end 
+			end
+		end
+
+		if #cand>0 then
+			local c=get_rnd(cand)
+			mset(c.x,c.y,1)
+		end
+	until #cand<=1
 end
 
 function dig_worm(x,y)
@@ -1318,8 +1334,18 @@ function fill_ends()
 end
 
 function is_door(x,y)
+	local sig=get_sig(x,y)
+	if b_comp(sig,0b11000000,0b00001111) or b_comp(sig,0b00110000,0b00001111) then
+		return next_to_room(x,y)
+	end
+
+	return false
+end
+
+function next_to_room(x,y)
 	for i=1,4 do
-		if in_bounds(x+dir_x[i],y+dir_y[i]) and room_map[x+dir_x[i]][y+dir_y[i]]!=0 then
+		if in_bounds(x+dir_x[i],y+dir_y[i]) and 
+			 room_map[x+dir_x[i]][y+dir_y[i]]!=0 then
 			return true
 		end
 	end
@@ -1329,7 +1355,7 @@ end
 
 function install_doors()
 	for d in all(doors) do
-		if is_walkable(d.x,d.y) and is_door(d.x,d.y) then
+		if mget(d.x,d.y)==1 and is_door(d.x,d.y) then
 			mset(d.x,d.y,13)
 		end
 	end
@@ -1343,7 +1369,7 @@ function start_end()
 	repeat 
 		px,py=flr(rnd(16)),flr(rnd(16))
 	until is_walkable(px,py)
-
+	
 	calc_dist(px,py)
 
 	for x=0,15 do
@@ -1357,21 +1383,23 @@ function start_end()
 	end
 
 	calc_dist(px,py)
+
 	high=0
 	for x=0,15 do
 		for y=0,15 do
 			local tmp=dist_map[x][y]
-			if tmp>high and can_carve(x,y,false) then
+			if tmp>high and (can_carve(x,y,false) or can_carve(x,y,true)) then
 				ex,ey,high=x,y,tmp
 			end
 		end
 	end
+
 	mset(ex,ey,14)
 
 	for x=0,15 do
 		for y=0,15 do
 			local tmp=dist_map[x][y]
-			if tmp>=0 and tmp<low and can_carve(x,y,false) then
+			if tmp>=0 and tmp<low and (can_carve(x,y,false) or can_carve(x,y,true)) then
 				px,py,low=x,y,tmp
 			end
 		end
@@ -1379,9 +1407,7 @@ function start_end()
 
 	mset(px,py,15)
 	p_mob.x=px
-	p_mob.y=py
-
-	
+	p_mob.y=py	
 end
 
 __gfx__
@@ -1398,7 +1424,7 @@ __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000000008000000090000000b0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
