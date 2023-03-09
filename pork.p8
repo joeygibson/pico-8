@@ -33,7 +33,8 @@ end
 function _draw()
 	_drw()
 	draw_wind()
-	check_fade()
+	-- fadeperc=0
+	check_fade() 
 	cursor(4,4)
 	color(8)
 	for txt in all(debug) do
@@ -206,6 +207,9 @@ end
 -- draws
 function draw_game()
 	cls()
+
+	if fadeperc==1 then return end
+
 	map()
 
 	for m in all(dmob) do
@@ -481,14 +485,14 @@ function check_end()
 		_upd=update_gover
 		_drw=draw_win
 		fadeout(0.02)
-		reload(0x2000,0x2000,0x1000)
+		
 		return false
 	elseif p_mob.hp<=0 then
 		wind={}
 		_upd=update_gover
 		_drw=draw_gover
 		fadeout(0.02)
-		reload(0x2000,0x2000,0x1000)
+		
 		return false
 	end
 
@@ -1069,6 +1073,8 @@ end
 -- gen
 function gen_floor(f)
 	floor=f
+	mob={}
+	add(mob,p_mob)
 	if floor==0 then
 		copy_map(16,0)
 	elseif floor==win_floor then
@@ -1080,8 +1086,7 @@ end
 
 function map_gen()
 	copy_map(48,0)
-	mob={}
-	add(mob,p_mob)
+	
 	rooms={}
 	room_map=blankmap(0)
 	doors={}
@@ -1096,6 +1101,14 @@ function map_gen()
 	spawn_mobs()
 end
 
+function snapshot()
+	cls()
+	map()
+	for i=0,1 do
+		-- flip()
+	end
+end
+
 ---------------------
 -- rooms
 ---------------------
@@ -1107,6 +1120,7 @@ function gen_rooms()
 
 		if place_room(r) then
 			r_max-=1
+			snapshot()
 		else
 			f_max-=1
 			if r.w>r.h then
@@ -1181,32 +1195,15 @@ function maze_worm()
 		local cand={}
 		for x=0,15 do
 			for y=0,15 do
-				if not is_walkable(x,y) and get_sig(x,y)==255 then
-					add(cand,{x=x,y=y})
-				end 
-			end
-		end
-
-		if #cand>0 then
-			local c=get_rnd(cand)
-
-			dig_worm(c.x,c.y)
-		end
-	until #cand<=1
-
-	repeat
-		local cand={}
-		for x=0,15 do
-			for y=0,15 do
 				if can_carve(x,y,false) and not next_to_room(x,y) then
 					add(cand,{x=x,y=y})
-				end 
+				end
 			end
 		end
 
 		if #cand>0 then
 			local c=get_rnd(cand)
-			mset(c.x,c.y,1)
+			dig_worm(c.x,c.y)
 		end
 	until #cand<=1
 end
@@ -1216,7 +1213,7 @@ function dig_worm(x,y)
 
 	repeat
 		mset(x,y,1)
-
+		snapshot()
 		if not can_carve(x+dir_x[dr],y+dir_y[dr],false) or (rnd()<0.5 and step>2) then
 			step=0
 			local cand={}
@@ -1240,7 +1237,11 @@ function dig_worm(x,y)
 end
 
 function can_carve(x,y,walk)
-	if in_bounds(x,y) and is_walkable(x,y)==walk then
+	if not in_bounds(x,y) then return false end
+
+	local walk=walk==nil and is_walkable(x,y) or walk
+
+	if is_walkable(x,y)==walk then
 		local sig=get_sig(x,y)
 
 		for i=1,#crv_sig do
@@ -1324,7 +1325,7 @@ function carve_doors()
 					f1=flags[x1][y1]
 					f2=flags[x2][y2]
 					if found and f1!=f2 then
-						add(drs,{x=x,y=y,f1=f1,f2=f2})
+						add(drs,{x=x,y=y,f=f1})
 					end
 				end
 			end
@@ -1334,7 +1335,7 @@ function carve_doors()
 			local d=get_rnd(drs)
 			add(doors,d)
 			mset(d.x,d.y,1)
-			grow_flag(d.x,d.y,d.f1)
+			grow_flag(d.x,d.y,d.f)
 		end
 	until #drs==0
 end
@@ -1375,22 +1376,20 @@ function carve_scuts()
 end
 
 function fill_ends()
-	local cand,tle
+	local filled,tle
 	repeat 
-		cand={}
+		filled=false
 		for x=0,15 do
 			for y=0,15 do
 				tle=mget(x,y)
 				if can_carve(x,y,true) and tle!=14 and tle!=15 then
-					add(cand,{x=x,y=y})
+					filled=true
+					mset(x,y,2)
+					snapshot()
 				end
 			end
 		end
-
-		for c in all(cand) do
-			mset(c.x,c.y,2)
-		end
-	until #cand==0
+	until not filled
 end
 
 function is_door(x,y)
@@ -1448,7 +1447,7 @@ function start_end()
 	for x=0,15 do
 		for y=0,15 do
 			local tmp=dist_map[x][y]
-			if tmp>high and (can_carve(x,y,false) or can_carve(x,y,true)) then
+			if tmp>high and can_carve(x,y) then
 				ex,ey,high=x,y,tmp
 			end
 		end
@@ -1459,7 +1458,7 @@ function start_end()
 	for x=0,15 do
 		for y=0,15 do
 			local tmp=dist_map[x][y]
-			if tmp>=0 and tmp<low and (can_carve(x,y,false) or can_carve(x,y,true)) then
+			if tmp>=0 and tmp<low and can_carve(x,y) then
 				px,py,low=x,y,tmp
 			end
 		end
