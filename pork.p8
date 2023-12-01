@@ -1104,9 +1104,9 @@ end
 function snapshot()
 	cls()
 	map()
-	for i=0,1 do
-		-- flip()
-	end
+	-- for i=0,1 do
+	-- 	flip()
+	-- end
 end
 
 ---------------------
@@ -1204,6 +1204,7 @@ function maze_worm()
 		if #cand>0 then
 			local c=get_rnd(cand)
 			dig_worm(c.x,c.y)
+			snapshot()
 		end
 	until #cand<=1
 end
